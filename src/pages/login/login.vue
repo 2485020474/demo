@@ -41,7 +41,7 @@ export default {
           // vuex保存了用户信息
           
           this.changeUser(res.data.list)
-          this.$router.push("/index")
+          this.$router.push("/index/home")
           
         } else {
           warningAlert(res.data.msg);

@@ -13,7 +13,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="用户名" :label-width="formLabelWidth">
-          <el-input v-model="form.username" autocomplete="off"></el-input>
+          <el-input v-model="form.username" autocomplete="off" @blur="usname"></el-input>
         </el-form-item>
         <el-form-item label="密码" :label-width="formLabelWidth">
           <el-input v-model="form.password" show-password></el-input>
@@ -123,6 +123,10 @@ export default {
         this.form = res.data.list;
       });
     },
+    // 用户名正则
+    usname(){
+        
+    }
   },
   mounted() {
     

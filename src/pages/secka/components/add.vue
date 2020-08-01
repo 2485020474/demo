@@ -1,17 +1,18 @@
 <template>
   <div class="add">
     <el-dialog :title="info.title" :visible.sync="info.show">
-      <el-form :model="form">
-        <el-form-item label="活动名称" :label-width="formLabelWidth">
+      <el-form :model="form" :rules="rules" ref="form">
+        <el-form-item label="活动名称" :label-width="formLabelWidth" prop="title">
           <el-input v-model="form.title" autocomplete="off"></el-input>
         </el-form-item>
-        <el-form-item label="活动期限" :label-width="formLabelWidth">
+        <el-form-item label="活动期限" :label-width="formLabelWidth" prop="time">
           <el-date-picker
             v-model="time"
             type="daterange"
             range-separator="至"
             start-placeholder="开始日期"
             end-placeholder="结束日期"
+            @blur="addss"
           ></el-date-picker>
         </el-form-item>
         <!-- 一级分类 -->
@@ -60,7 +61,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="cancel()">取 消</el-button>
-        <el-button type="primary" @click="add" v-if="info.isAdd">添 加</el-button>
+        <el-button type="primary" @click="add('form')" v-if="info.isAdd">添 加</el-button>
         <el-button type="primary" @click="Update" v-else>修 改</el-button>
       </div>
     </el-dialog>
@@ -68,7 +69,12 @@
 </template>
 <script>
 import { mapGetters, mapActions } from "vuex";
-import { requestSeckAdd, requestSeckDetail,requestSeckEdit,requestGoodsList} from "../../../util/request";
+import {
+  requestSeckAdd,
+  requestSeckDetail,
+  requestSeckEdit,
+  requestGoodsList,
+} from "../../../util/request";
 import { successAlert, warningAlert } from "../../../util/alert";
 export default {
   props: ["info"],
@@ -97,6 +103,10 @@ export default {
         second_cateid: "",
         goodsid: "",
         status: 1,
+      },
+      rules: {
+        title: [{ required: true, message: "请输入活动名称", trigger: "blur" }],
+        time: [{ required: true, message: "请选择日期", trigger: "change" }],
       },
     };
   },
@@ -131,31 +141,37 @@ export default {
         });
     },
     //点击添加
-    add() {
-      this.form.begintime = this.time[0].getTime();
-      this.form.endtime = this.time[1].getTime();
-      requestSeckAdd(this.form).then((res) => {
-        if (res.data.code == 200) {
-          successAlert(res.data.msg);
-          this.empty();
-          this.cancel();
-          this.requestSeckaList();
+    add(form) {
+      this.$refs[form].validate((valid) => {
+        if (valid) {
+          this.form.begintime = this.time[0].getTime();
+          this.form.endtime = this.time[1].getTime();
+          requestSeckAdd(this.form).then((res) => {
+            if (res.data.code == 200) {
+              successAlert(res.data.msg);
+              this.empty();
+              this.cancel();
+              this.requestSeckaList();
+            } else {
+              warningAlert(res.data.msg);
+            }
+          });
         } else {
-          warningAlert(res.data.msg);
+          warningAlert("请按照格式填写");
+          return false;
         }
       });
     },
     //获取数据
     gttersDetail(id) {
-      requestSeckDetail({ id: id }).then((res) => { 
+      requestSeckDetail({ id: id }).then((res) => {
         this.form = res.data.list;
         this.form.id = id;
-        let begintimes = new Date(Number(res.data.list.begintime))
-        let endtimes = new Date(Number(res.data.list.endtime))
-        this.time= [begintimes,endtimes]
+        let begintimes = new Date(Number(res.data.list.begintime));
+        let endtimes = new Date(Number(res.data.list.endtime));
+        this.time = [begintimes, endtimes];
         this.changeFirst(true);
         this.changeTwo(true);
-        
       });
     },
     //修改
@@ -179,8 +195,8 @@ export default {
         (item) => item.id == this.form.first_cateid
       );
       this.CateArr = this.Catelist[index].children;
-      if(!bool){
-          this.form.second_cateid = "";
+      if (!bool) {
+        this.form.second_cateid = "";
       }
     },
     // 二级分类修改
@@ -190,11 +206,13 @@ export default {
         sid: this.form.second_cateid,
       }).then((res) => {
         this.secendSpecArr = res.data.list;
-        
       });
-      if(!bool){
-          this.form.goodsid =""
+      if (!bool) {
+        this.form.goodsid = "";
       }
+    },
+    addss() {
+      console.log(this.time.length);
     },
   },
   mounted() {

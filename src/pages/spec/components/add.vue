@@ -1,8 +1,8 @@
 <template>
   <div class="add">
     <el-dialog :title="info.title" :visible.sync="info.show">
-      <el-form :model="form">
-        <el-form-item label="规格名称" :label-width="formLabelWidth">
+      <el-form :model="form" :rules="rules" ref="form">
+        <el-form-item label="规格名称" :label-width="formLabelWidth" prop="specsname">
           <el-input v-model="form.specsname" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item
@@ -28,7 +28,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="cancel()">取 消</el-button>
-        <el-button type="primary" @click="add" v-if="info.isAdd">添 加</el-button>
+        <el-button type="primary" @click="add('form')" v-if="info.isAdd">添 加</el-button>
         <el-button type="primary" @click="Update" v-else>修 改</el-button>
       </div>
     </el-dialog>
@@ -36,7 +36,11 @@
 </template>
 <script>
 import { mapGetters, mapActions } from "vuex";
-import { requestSpecDetail, requestSpecUpdate,requestSpecAdd } from "../../../util/request";
+import {
+  requestSpecDetail,
+  requestSpecUpdate,
+  requestSpecAdd,
+} from "../../../util/request";
 import { successAlert, warningAlert } from "../../../util/alert";
 export default {
   props: ["info"],
@@ -52,6 +56,11 @@ export default {
         specsname: "",
         attrs: "",
         status: 1,
+      },
+      rules: {
+        specsname: [
+          { required: true, message: "请输入规格名称", trigger: "blur" },
+        ],
       },
       //商品规格属性
       attrArr: [
@@ -76,7 +85,6 @@ export default {
     },
     cancel() {
       this.info.show = false;
-      
     },
     // 重置内容
     empty() {
@@ -87,20 +95,23 @@ export default {
       };
     },
     //点击添加
-    add() {
-      if (this.attrArr.some((item) => item.value == "")) {
-        warningAlert("输入框不能为空");
-        return;
-      }
+    add(form) {
       this.form.attrs = JSON.stringify(this.attrArr.map((item) => item.value));
-      requestSpecAdd(this.form).then((res) => {
-        if (res.data.code == 200) {
-          successAlert(res.data.msg);
-          this.empty();
-          this.cancel();
-          this.requestList();
+      this.$refs[form].validate((valid) => {
+        if (valid) {
+          requestSpecAdd(this.form).then((res) => {
+            if (res.data.code == 200) {
+              successAlert(res.data.msg);
+              this.empty();
+              this.cancel();
+              this.requestList();
+            } else {
+              warningAlert(res.data.msg);
+            }
+          });
         } else {
-          warningAlert(res.data.msg);
+          warningAlert("请按照格式填写");
+          return false;
         }
       });
     },

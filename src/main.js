@@ -6,13 +6,14 @@ import router from './router'
 import store from "./store"
 
 import "./assets/css/reset.css"
-
+import reg from "./util/regular"
 //引入公共组件
 import commonComponents from "./components"
 for(let i in commonComponents){
   Vue.component(i,commonComponents[i])
 }
 
+Vue.prototype.$reg=reg;
 //引入过滤器
 import filters from "./filters"
 for(let i in filters){

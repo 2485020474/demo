@@ -1,13 +1,13 @@
 <template>
   <div>
     <el-dialog :title="info.title" :visible.sync="info.show">
-      <el-form :model="form">
-        <el-form-item label="菜单名称" :label-width="formLabelWidth">
+      <el-form :model="form" :rules="rules" ref="form">
+        <el-form-item label="菜单名称" :label-width="formLabelWidth" prop="title" >
           <el-input v-model="form.title" autocomplete="off"></el-input>
         </el-form-item>
 
-        <el-form-item label="上级菜单" :label-width="formLabelWidth">
-          <el-select v-model="form.pid" placeholder="请选择">
+        <el-form-item label="上级菜单" :label-width="formLabelWidth" prop="pid">
+          <el-select v-model="form.pid" placeholder="请选择" >
             <el-option label="--请选择--" disabled :value="55"></el-option>
             <el-option label="顶级菜单" :value="0"></el-option>
             <el-option v-for="item in list" :key="item.id" :label="item.title" :value="item.id"></el-option>
@@ -52,7 +52,7 @@
 import {
   requestMenuAdd,
   requestMenuDetail,
-  requestMenuEdit
+  requestMenuEdit,
 } from "../../../util/request";
 import { successAlert, warningAlert } from "../../../util/alert";
 import { mapGetters, mapActions } from "vuex";
@@ -61,8 +61,8 @@ export default {
   components: {},
   computed: {
     ...mapGetters({
-      list: "menu/list"
-    })
+      list: "menu/list",
+    }),
   },
   data() {
     return {
@@ -73,19 +73,37 @@ export default {
         icon: "",
         type: 1,
         url: "",
-        status: 1
+        status: 1,
+      },
+      rules: {
+        title: [
+          { required: true, message: "请输入菜单名称", trigger: "blur" },
+        ],
+        pid: [
+          { required: true, message: "请选择上级菜单", trigger: "change" },
+        ],
       },
       //图标集合
       icons: ["el-icon-setting", "el-icon-goods"],
       //路由集合
-      lisurl: ["/index/menu", "/index/role", "/index/manage", "/index/cate", "/index/spec", "/index/goods", "/index/members","/index/banner","index/secka"],
+      lisurl: [
+        "/index/menu",
+        "/index/role",
+        "/index/manage",
+        "/index/cate",
+        "/index/spec",
+        "/index/goods",
+        "/index/members",
+        "/index/banner",
+        "index/secka",
+      ],
       dialogTableVisible: false,
-      formLabelWidth: "120px"
+      formLabelWidth: "120px",
     };
   },
   methods: {
     ...mapActions({
-      request: "menu/requestList"
+      request: "menu/requestList",
     }),
 
     // 重置内容
@@ -96,24 +114,29 @@ export default {
         icon: "",
         type: 1,
         url: "",
-        status: 1
+        status: 1,
       };
     },
     add() {
-      // 添加成功
-      this.info.show = false;
-      requestMenuAdd(this.form).then(res => {
-        if (res.data.code == 200) {
-          // 弹出成功
-          successAlert(res.data.msg);
-          // 重置
-          this.empty();
-          // 重新请求/刷新
-          this.request();
-        } else {
-          warningAlert(res.data.msg);
-        }
-      });
+      if (this.form.title.length != 0 && this.form.pid.length != 0) {
+        // 添加成功
+        this.info.show = false;
+        requestMenuAdd(this.form).then((res) => {
+          if (res.data.code == 200) {
+            // 弹出成功
+            successAlert(res.data.msg);
+            // 重置
+            this.empty();
+            // 重新请求/刷新
+            this.request();
+          } else {
+            warningAlert(res.data.msg);
+          }
+        });
+      }else{
+        warningAlert("请确保输入框不能为空");
+        return;
+      }
     },
     cancel() {
       this.info.show = false;
@@ -123,13 +146,13 @@ export default {
       }
     },
     getDetail(id) {
-      requestMenuDetail({ id: id }).then(res => {
+      requestMenuDetail({ id: id }).then((res) => {
         this.form = res.data.list;
         this.form.id = id;
       });
     },
     unDate() {
-      requestMenuEdit(this.form).then(res => {
+      requestMenuEdit(this.form).then((res) => {
         if (res.data.code == 200) {
           successAlert("修改成功");
           this.cancel();
@@ -139,9 +162,9 @@ export default {
           warningAlert(res.data.msg);
         }
       });
-    }
+    },
   },
-  mounted() {}
+  mounted() {},
 };
 </script>
 <style scoped>

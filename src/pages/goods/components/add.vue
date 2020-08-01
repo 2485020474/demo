@@ -1,9 +1,9 @@
 <template>
   <div class="add">
     <el-dialog :title="info.title" :visible.sync="info.show" @opened="createEdited">
-      <el-form :model="form">
+      <el-form :model="form" :rules="rules" ref="form">
         <!-- 一级分类 -->
-        <el-form-item label="一级分类" :label-width="formLabelWidth">
+        <el-form-item label="一级分类" :label-width="formLabelWidth" prop="first_cateid">
           <el-select v-model="form.first_cateid" placeholder="请选择" @change="changeFirst()">
             <el-option
               v-for="item in cateList"
@@ -14,7 +14,7 @@
           </el-select>
         </el-form-item>
         <!-- 二级分类 -->
-        <el-form-item label="二级分类" :label-width="formLabelWidth">
+        <el-form-item label="二级分类" :label-width="formLabelWidth" prop="second_cateid">
           <el-select v-model="form.second_cateid" placeholder="请选择">
             <el-option
               v-for="item in secendCateArr"
@@ -24,7 +24,7 @@
             ></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="商品名称" :label-width="formLabelWidth">
+        <el-form-item label="商品名称" :label-width="formLabelWidth" prop="goodsname">
           <el-input v-model="form.goodsname" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="价格" :label-width="formLabelWidth">
@@ -87,7 +87,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="cancel()">取 消</el-button>
-        <el-button type="primary" @click="add" v-if="info.isAdd">添 加</el-button>
+        <el-button type="primary" @click="add('form')" v-if="info.isAdd">添 加</el-button>
         <el-button type="primary" @click="update" v-else>修 改</el-button>
       </div>
     </el-dialog>
@@ -136,6 +136,15 @@ export default {
         description: "",
       },
       formLabelWidth: "120px",
+      rules: {
+        first_cateid: [{ required: true, message: "请选择一级分类", trigger: "change" }],
+        second_cateid: [
+          { required: true, message: "请选择二级分类", trigger: "change" },
+        ],
+        goodsname: [
+          { required: true, message: "请输入商品名称", trigger: "blur" },
+        ],
+      },
     };
   },
   methods: {
@@ -173,13 +182,13 @@ export default {
       }
     },
     emay() {
-      this.editor = null,
+      (this.editor = null),
         // 用来存放二级分类
-        this.secendCateArr = [],
+        (this.secendCateArr = []),
         //用来存放商品规格属性
-        this.secendSpecArr = [],
-        this.imgUrl = "",
-        this.form = {
+        (this.secendSpecArr = []),
+        (this.imgUrl = ""),
+        (this.form = {
           first_cateid: "",
           second_cateid: "",
           goodsname: "",
@@ -192,26 +201,33 @@ export default {
           isnew: 1,
           ishot: 1,
           status: 1,
-        };
+        });
     },
     //添加
-    add() {
+    add(form) {
       this.form.description = this.editor.txt.html();
       this.form.specsattr = JSON.stringify(this.form.specsattr);
-      requestGoodsAdd(this.form).then((res) => {
-        if (res.data.code == 200) {
-          successAlert(res.data.msg);
-          // 重新请求
-           this.requestGoodsList();
-          // 弹框小时
-          this.info.show = false;
-          //清空内容
-          this.emay();
-          //重新请求总页数
-          this.requestUserTotal();
-          this.changePage();
+      this.$refs[form].validate((valid) => {
+        if (valid) {
+          requestGoodsAdd(this.form).then((res) => {
+            if (res.data.code == 200) {
+              successAlert(res.data.msg);
+              // 重新请求
+              this.requestGoodsList();
+              // 弹框小时
+              this.info.show = false;
+              //清空内容
+              this.emay();
+              //重新请求总页数
+              this.requestUserTotal();
+              this.changePage();
+            } else {
+              warningAlert(res.data.msg);
+            }
+          });
         } else {
-          warningAlert(res.data.msg);
+          warningAlert("请按照格式填写");
+          return false;
         }
       });
     },

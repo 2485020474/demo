@@ -1,15 +1,15 @@
 <template>
   <div class="add">
     <el-dialog :title="info.title" :visible.sync="info.show">
-      <el-form :model="form">
-        <el-form-item label="上级分类" :label-width="formLabelWidth">
+      <el-form :model="form" :rules="rules" ref="form">
+        <el-form-item label="上级分类" :label-width="formLabelWidth" prop="pid">
           <el-select v-model="form.pid" placeholder="请选择">
             <el-option label="顶级分类" :value="0"></el-option>
             <!-- 动态数据 -->
             <el-option v-for="item in list" :key="item.id" :label="item.catename" :value="item.id"></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="分类名称" :label-width="formLabelWidth">
+        <el-form-item label="分类名称" :label-width="formLabelWidth" prop="catename">
           <el-input v-model="form.catename" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="图片" :label-width="formLabelWidth" v-if="form.pid != 0">
@@ -37,7 +37,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="cancel()">取 消</el-button>
-        <el-button type="primary" @click="add" v-if="info.isAdd">添 加</el-button>
+        <el-button type="primary" @click="add('form')" v-if="info.isAdd">添 加</el-button>
         <el-button type="primary" @click="Update" v-else>修 改</el-button>
       </div>
     </el-dialog>
@@ -70,6 +70,14 @@ export default {
         catename: "",
         img: null,
         status: 1,
+      },
+      rules: {
+        pid: [
+          { required: true, message: "请选择上级分类", trigger: "change" },
+        ],
+        catename: [
+          { required: true, message: "请输入分类名称", trigger: "blur" },
+        ]
       },
     };
   },
@@ -111,15 +119,22 @@ export default {
       };
     },
     //点击添加
-    add() {
-      requestCateAdd(this.form).then((res) => {
-        if (res.data.code == 200) {
-          successAlert(res.data.msg);
-          this.empty();
-          this.cancel();
-          this.requestList();
+    add(form) {
+      this.$refs[form].validate((valid) => {
+        if (valid) {
+          requestCateAdd(this.form).then((res) => {
+            if (res.data.code == 200) {
+              successAlert(res.data.msg);
+              this.empty();
+              this.cancel();
+              this.requestList();
+            } else {
+              warningAlert(res.data.msg);
+            }
+          });
         } else {
-          warningAlert(res.data.msg);
+          warningAlert("请按照格式填写");
+          return false;
         }
       });
     },
@@ -129,7 +144,7 @@ export default {
         // console.log(res.data.list.menus)
         this.form = res.data.list;
         this.form.id = id;
-        this.imageUrl = this.$imgPro+res.data.list.img
+        this.imageUrl = this.$imgPro + res.data.list.img;
       });
     },
 
@@ -145,12 +160,9 @@ export default {
           warningAlert(res.data.msg);
         }
       });
-    }
+    },
   },
-  mounted() {
-
-
-  },
+  mounted() {},
 };
 </script>
 <style scoped lang="stylus">

@@ -1,8 +1,8 @@
 <template>
   <div>
     <el-dialog :title="info.title" :visible.sync="info.show">
-      <el-form :model="form">
-        <el-form-item label="角色名称" :label-width="formLabelWidth">
+      <el-form :model="form" :rules="rules" ref="form">
+        <el-form-item label="角色名称" :label-width="formLabelWidth" prop="rolename">
           <el-input v-model="form.rolename" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="角色权限" :label-width="formLabelWidth">
@@ -41,7 +41,7 @@ import { mapGetters, mapActions } from "vuex";
 import {
   requestRoleAdd,
   requestRoleDetail,
-  requestRoleUpdtte
+  requestRoleUpdtte,
 } from "../../../util/request";
 import { successAlert, warningAlert } from "../../../util/alert";
 export default {
@@ -49,8 +49,8 @@ export default {
   components: {},
   computed: {
     ...mapGetters({
-      menuList: "menu/list"
-    })
+      menuList: "menu/list",
+    }),
   },
   data() {
     return {
@@ -60,25 +60,29 @@ export default {
         menus: "",
         status: 1,
       },
-      skey:[],
+      rules: {
+        rolename: [
+          { required: true, message: "请输入菜单名称", trigger: "blur" },
+        ],
+      },
+      skey: [],
       formLabelWidth: "120px",
       //树形结构
 
       defaultProps: {
         children: "children",
-        label: "title"
-      }
+        label: "title",
+      },
     };
   },
   methods: {
     ...mapActions({
       requeMenuList: "menu/requestList",
-      requestList: "role/requestList"
+      requestList: "role/requestList",
     }),
     cancel() {
       this.info.show = false;
       this.empty();
-      
     },
 
     // 重置内容
@@ -86,45 +90,47 @@ export default {
       this.form = {
         rolename: "",
         menus: "",
-        status: 1
+        status: 1,
       };
-      this.skey=this.$refs.tree.setCheckedKeys([])
+      this.skey = this.$refs.tree.setCheckedKeys([]);
     },
     //点击添加
     add() {
-      //   this.info.show = true;
+      if (this.form.rolename.length != 0) {
+        this.form.menus = JSON.stringify(this.$refs.tree.getCheckedKeys());
+        //   console.log(this.form);
+        requestRoleAdd(this.form).then((res) => {
+          if (res.data.code == 200) {
+            successAlert("修改成功");
+            this.empty();
+            this.cancel();
+            this.requeMenuList();
+            this.requestList();
+          } else {
+            warningAlert(res.data.msg);
+          }
+        });
+      }else{
+        warningAlert("请确保输入框不能为空");
+      }
       //    获取tree的key赋值
-      this.form.menus = JSON.stringify(this.$refs.tree.getCheckedKeys());
-      //   console.log(this.form);
-      requestRoleAdd(this.form).then(res => {
-        if (res.data.code == 200) {
-          successAlert("修改成功");
-          this.empty();
-          this.cancel();
-          this.requeMenuList();
-          this.requestList();
-        } else {
-          warningAlert(res.data.msg);
-        }
-      });
     },
     //获取数据
     getDetail(id) {
-      requestRoleDetail({ id: id }).then(res => {
+      requestRoleDetail({ id: id }).then((res) => {
         // this.empty()
-        this.skey = JSON.parse(res.data.list.menus)
+        this.skey = JSON.parse(res.data.list.menus);
         // console.log(res.data.list.menus)
         this.form = res.data.list;
         this.form.id = id;
-        
       });
     },
 
     //修改
     Update() {
-//    获取tree的key赋值
+      //    获取tree的key赋值
       this.form.menus = JSON.stringify(this.$refs.tree.getCheckedKeys());
-      requestRoleUpdtte(this.form).then(res => {
+      requestRoleUpdtte(this.form).then((res) => {
         if (res.data.code == 200) {
           successAlert("修改成功");
           this.cancel();
@@ -134,13 +140,13 @@ export default {
           warningAlert(res.data.msg);
         }
       });
-    }
+    },
   },
   mounted() {
     if (this.requeMenuList.length == 0) {
       this.requeMenuList();
     }
-  }
+  },
 };
 </script>
 <style scoped>
